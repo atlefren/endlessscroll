@@ -1,0 +1,87 @@
+<html>
+<body>
+
+
+
+<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.0/backbone-min.js"></script>
+<script type="text/javascript">
+
+    (function() {
+        "use strict";
+
+        var Item = Backbone.Model.extend({});
+
+        var Items = Backbone.Collection.extend({
+
+            model: Item,
+
+            url: "/api/items/"
+        });
+
+        var ItemView = Backbone.View.extend({
+
+            tagName: "li",
+
+            render: function() {
+                this.$el.html(this.model.get("name"));
+                return this;
+            }
+
+        });
+
+        var ItemsList = Backbone.View.extend({
+
+            tagName: "ul",
+
+            offset: 0,
+
+            limit: 60,
+
+            initialize: function() {
+                this.collection = new Items();
+                this.collection.on("reset", this.addAll, this);
+                this.collection.on("add", this.addOne, this);
+                this.getItems();
+            },
+
+            render: function () {
+                return this;
+            },
+
+            getItems: function () {
+                this.collection.fetch({
+                    "data": {"offset": this.offset, "limit": this.limit}, 
+                    "success": _.bind(function(e){
+                        this.offset += this.limit;
+                    }, this)
+                });
+            },
+
+            addOne: function(item) {
+                var view = new ItemView({model: item});
+                this.$el.append(view.render().$el);
+            },
+
+            addAll: function() {
+                this.collection.each(this.addOne, this);
+            }
+
+        });
+
+        var itemsList = new ItemsList();
+        $(document.body).append(itemsList.render().$el);
+
+        document.addEventListener('scroll', function (event) {
+            if (document.body.scrollHeight == document.body.scrollTop + window.innerHeight) {
+                itemsList.getItems();
+            }
+        });
+
+    }());
+
+</script>
+
+</body>
+</html>
